@@ -1,4 +1,16 @@
 #!/usr/bin/osascript
+
+# kill alfred proferences window if already open
+# taken from https://discussions.apple.com/thread/4059113?tstart=0
+tell application "System Events"
+    set ProcessList to name of every process
+    if "Alfred Preferences" is in ProcessList then
+        set ThePID to unix id of process "Alfred Preferences"
+        do shell script "kill -KILL " & ThePID
+    end if
+end tell
+
+tell application "System Events" to quit
 set delay_time to 0.3
 tell application "Google Chrome"
 	set theURL to URL of active tab of window 1
@@ -25,5 +37,6 @@ tell application "System Events"
 		display dialog "Error: " & errMsg
 	end try
 end tell
+
 
 
