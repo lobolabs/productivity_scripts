@@ -7,6 +7,8 @@ from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
+import datetime
+
 
 try:
     import argparse
@@ -49,6 +51,33 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
+def get_spreadsheet_cell(service, spreadsheetId):
+    spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
+    dateCells = "C15:H15"
+    cols = ['c','d','e','f','g','h']
+    rowNum = 16
+    for sheet in spreadsheet['sheets']:
+        sheetTitle = sheet['properties']['title']
+        rangeName = "%s!%s" % (sheetTitle, dateCells)
+        result = service.spreadsheets().values().get(
+            spreadsheetId=spreadsheetId, range=rangeName).execute()
+        values = result.get('values',[])
+        colNum = 0
+        # TODO: replace current year with actual cell year, see http://stackoverflow.com/q/42216491/766570
+        for row in values:
+            for column in row:
+                dateStr = "%s %s" % (column, datetime.date.today().year)
+                cellDate = datetime.datetime.strptime(dateStr, '%b %d %Y')
+                if cellDate.date() == datetime.date.today():
+                    print ('----------')
+                    print(cellDate)
+                    print("sheet: %s, row: %s, column: %s" % (sheetTitle, row, column))
+                    return sheetTitle, '%s%s' % (cols[colNum], rowNum)
+
+                colNum +=1
+
+
+
 def main():
     """Shows basic usage of the Sheets API.
 
@@ -64,7 +93,9 @@ def main():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
-    rangeName = 'Feb w2!H16:H16'
+    sheetTitle, cell = get_spreadsheet_cell(service, spreadsheetId)
+    rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
+    print("updating range" + rangeName)
     values = [["10"]]
     body = { 
             'values': values
