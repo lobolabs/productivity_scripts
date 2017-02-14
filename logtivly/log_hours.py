@@ -8,13 +8,9 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 import datetime
+import sys
 
 
-try:
-    import argparse
-    flags = argparse.ArgumentParser(parents=[tools.argparser]).parse_args()
-except ImportError:
-    flags = None
 
 # If modifying these scopes, delete your previously saved credentials
 # at ~/.credentials/sheets.googleapis.com-python-quickstart.json
@@ -54,7 +50,6 @@ def get_credentials():
 def get_spreadsheet_cell(service, spreadsheetId, projectStr="misc"):
     spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
     dateCells = "C15:H15"
-    cols = ['c','d','e','f','g','h']
     for sheet in spreadsheet['sheets']:
         sheetTitle = sheet['properties']['title']
         rangeName = "%s!%s" % (sheetTitle, dateCells)
@@ -71,24 +66,25 @@ def get_spreadsheet_cell(service, spreadsheetId, projectStr="misc"):
                     print ('----------')
                     print(cellDate)
                     print("sheet: %s, row: %s, column: %s" % (sheetTitle, row, column))
-                    #return sheetTitle, '%s%s' % (cols[colNum], rowNum)
-                    return get_project_cell(service, spreadsheetId, projectStr, sheetTitle, cols[colNum])
+                    return get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum)
 
                 colNum +=1
 
-def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, columnLetter):
-    spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
+def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
+    cols = ['c','d','e','f','g','h']
+    columnLetter = cols[colNum]
     # it's not likely that there wil be more than 4 projects at a time
     # but if there is, do logic that fetches all rows before the "total hours" row starts
-    projectCells = "B16:B19"
+    projectCells = 'B16:%s19' % columnLetter
     initialProjectCellIndex = 16
     rangeName = "%s!%s" % (sheetTitle, projectCells)
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName, majorDimension='COLUMNS').execute()
     values = list(map((lambda x: x.lower()), result.get('values',[])[0]))
     rowIndex = [i for i, s in enumerate(values) if projectStr.lower() in s][0]
+    initialCellValue = result['values'][colNum+1][rowIndex]
 
-    return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex)
+    return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex), float(initialCellValue)
 
 
 def main():
@@ -98,6 +94,10 @@ def main():
     students in a sample spreadsheet:
     https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
     """
+
+    projectStr = sys.argv[1]
+    hours = float(sys.argv[2])
+
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
     discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
@@ -106,10 +106,10 @@ def main():
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
-    sheetTitle, cell = get_spreadsheet_cell(service, spreadsheetId)
+    sheetTitle, cell, initialCellValue = get_spreadsheet_cell(service, spreadsheetId, projectStr)
     rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
     print("updating range" + rangeName)
-    values = [["10"]]
+    values = [[initialCellValue + hours]]
     body = { 
             'values': values
            }
