@@ -10,6 +10,8 @@ from oauth2client.file import Storage
 import datetime
 import sys
 
+from workflow import Workflow, ICON_WEB, web
+
 
 
 # If modifying these scopes, delete your previously saved credentials
@@ -87,16 +89,24 @@ def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
     return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex), float(initialCellValue)
 
 
-def main():
+def main(wf):
     """Shows basic usage of the Sheets API.
 
     Creates a Sheets API service object and prints the names and majors of
     students in a sample spreadsheet:
     https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
     """
-
-    projectStr = sys.argv[1]
-    hours = float(sys.argv[2])
+    sys.stderr.write("Log this to the console\n")
+    if len(wf.args):
+        sys.stderr.write("there ARE arguments!\n")
+        sys.stderr.write(wf.args[0]+"\n")
+        sys.stderr.write(wf.args[1]+"\n")
+        projectStr = wf.args[0]
+        hours = float(wf.args[1])
+    else:
+        sys.stderr.write("there are no arguments!\n")
+        projectStr = None
+        hours = None
 
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -108,6 +118,7 @@ def main():
     spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
     sheetTitle, cell, initialCellValue = get_spreadsheet_cell(service, spreadsheetId, projectStr)
     rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
+    sys.stderr.write("hello worldlfal\n")
     print("updating range" + rangeName)
     values = [[initialCellValue + hours]]
     body = { 
@@ -116,17 +127,10 @@ def main():
     result = service.spreadsheets().values().update(
             spreadsheetId=spreadsheetId, range=rangeName, body=body, valueInputOption="USER_ENTERED").execute()
 
-    values = result.get('values', [])
-
-    if not values:
-        print('No data found.')
-    else:
-        print('Name, Major:')
-        for row in values:
-            # Print columns A and E, which correspond to indices 0 and 4.
-            print('%s, %s' % (row[0], row[4]))
+    wf.notify.notify("operations successful")
 
 
 if __name__ == '__main__':
-    main()
+    wf = Workflow()
+    sys.exit(wf.run(main))
 
