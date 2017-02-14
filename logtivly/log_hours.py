@@ -127,7 +127,6 @@ def main(wf):
     result = service.spreadsheets().values().update(
             spreadsheetId=spreadsheetId, range=rangeName, body=body, valueInputOption="USER_ENTERED").execute()
 
-    wf.notify.notify("operations successful")
 
 
 if __name__ == '__main__':
