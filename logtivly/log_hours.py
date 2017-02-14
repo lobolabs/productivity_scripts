@@ -51,11 +51,10 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def get_spreadsheet_cell(service, spreadsheetId):
+def get_spreadsheet_cell(service, spreadsheetId, projectStr="misc"):
     spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
     dateCells = "C15:H15"
     cols = ['c','d','e','f','g','h']
-    rowNum = 16
     for sheet in spreadsheet['sheets']:
         sheetTitle = sheet['properties']['title']
         rangeName = "%s!%s" % (sheetTitle, dateCells)
@@ -72,10 +71,24 @@ def get_spreadsheet_cell(service, spreadsheetId):
                     print ('----------')
                     print(cellDate)
                     print("sheet: %s, row: %s, column: %s" % (sheetTitle, row, column))
-                    return sheetTitle, '%s%s' % (cols[colNum], rowNum)
+                    #return sheetTitle, '%s%s' % (cols[colNum], rowNum)
+                    return get_project_cell(service, spreadsheetId, projectStr, sheetTitle, cols[colNum])
 
                 colNum +=1
 
+def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, columnLetter):
+    spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
+    # it's not likely that there wil be more than 4 projects at a time
+    # but if there is, do logic that fetches all rows before the "total hours" row starts
+    projectCells = "B16:B19"
+    initialProjectCellIndex = 16
+    rangeName = "%s!%s" % (sheetTitle, projectCells)
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheetId, range=rangeName, majorDimension='COLUMNS').execute()
+    values = list(map((lambda x: x.lower()), result.get('values',[])[0]))
+    rowIndex = [i for i, s in enumerate(values) if projectStr.lower() in s][0]
+
+    return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex)
 
 
 def main():
