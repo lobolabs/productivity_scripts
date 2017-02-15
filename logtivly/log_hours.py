@@ -92,12 +92,12 @@ def get_sheet_title_and_column(service, spreadsheetId):
                 colNum +=1
 
 def get_projects_and_hours_for_sheet(service, spreadsheetId, sheetTitle, colNum):
-    projectCells = 'B16:B19'
+    projectCells = 'B16:H19'
     initialProjectCellIndex = 16
     rangeName = "%s!%s" % (sheetTitle, projectCells)
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName, majorDimension='COLUMNS').execute()
-    return result.get('values',[])[0], result.get('values',[])[colNum]
+    return result.get('values',[])[0], result.get('values',[])[colNum+1]
 
 def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
     cols = ['c','d','e','f','g','h']
@@ -135,10 +135,10 @@ def py_main():
     items = []
     for project in projects:
         #sys.stderr.write("project: " + project + "\n")
-        items.add_item(title=project,
-                    subtitle=hours[index],
-                    icon=ICON_WEB,
-                    autocomplete=project, )
+        items.append({'title':project,
+                    'subtitle':"hours logged: "+hours[index],
+                    'icon':'ICON_WEB',
+                    'autocomplete':project})
         index+=1
 
     print(items)
@@ -177,7 +177,7 @@ def main(wf):
     for project in projects:
         #sys.stderr.write("project: " + project + "\n")
         wf.add_item(title=project,
-                    subtitle=hours[index],
+                    subtitle="hours logged: "+hours[index],
                     icon=ICON_WEB,
                     autocomplete=project, )
         index+=1
