@@ -9,6 +9,7 @@ from oauth2client import tools
 from oauth2client.file import Storage
 import datetime
 import sys
+from optparse import OptionParser
 
 from workflow import Workflow, ICON_WEB, web
 from workflow.notify import notify
@@ -47,7 +48,6 @@ def get_credentials():
             credentials = tools.run_flow(flow, store, flags)
         else: # Needed only for compatibility with Python 2.6
             credentials = tools.run(flow, store)
-        print('Storing credentials to ' + credential_path)
     return credentials
 
 def get_spreadsheet_cell(service, spreadsheetId, projectStr="misc"):
@@ -66,11 +66,7 @@ def get_spreadsheet_cell(service, spreadsheetId, projectStr="misc"):
                 dateStr = "%s %s" % (column, datetime.date.today().year)
                 cellDate = datetime.datetime.strptime(dateStr, '%b %d %Y')
                 if cellDate.date() == datetime.date.today():
-                    print ('----------')
-                    print(cellDate)
-                    print("sheet: %s, row: %s, column: %s" % (sheetTitle, row, column))
                     return get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum)
-
                 colNum +=1
 
 def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
@@ -86,7 +82,6 @@ def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
     projectNames = list(map((lambda x: x.lower()), result.get('values',[])[0]))
     rowIndex = [i for i, s in enumerate(projectNames) if projectStr.lower() in s][0]
     initialCellValue = result['values'][colNum+1][rowIndex]
-
     return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex), float(initialCellValue), projectNames[rowIndex]
 
 
@@ -98,12 +93,9 @@ def main(wf):
     https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
     """
     sys.stderr.write("Log this to the console\n")
-    if len(wf.args):
-        sys.stderr.write("there ARE arguments!\n")
-        sys.stderr.write(wf.args[0]+"\n")
-        sys.stderr.write(wf.args[1]+"\n")
-        projectStr = wf.args[0]
-        hours = float(wf.args[1])
+    if len(args):
+        projectStr = args[0]
+        hours = float(args[1])
     else:
         sys.stderr.write("there are no arguments!\n")
         projectStr = None
@@ -120,7 +112,7 @@ def main(wf):
     sheetTitle, cell, initialCellValue, projectName = get_spreadsheet_cell(service, spreadsheetId, projectStr)
     rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
     values = [[initialCellValue + hours]]
-    body = { 
+    body = {
             'values': values
            }
     result = service.spreadsheets().values().update(
@@ -130,6 +122,7 @@ def main(wf):
 
 
 if __name__ == '__main__':
+    parser = OptionParser()
+    (options, args) = parser.parse_args()
     wf = Workflow()
     sys.exit(wf.run(main))
-
