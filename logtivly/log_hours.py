@@ -2,6 +2,7 @@
 from __future__ import print_function
 import httplib2
 import os
+import json
 
 from apiclient import discovery
 from oauth2client import client
@@ -91,13 +92,15 @@ def get_sheet_title_and_column(service, spreadsheetId):
 
                 colNum +=1
 
-def get_projects_and_hours_for_sheet(service, spreadsheetId, sheetTitle, colNum):
+def get_projects_and_hours():
+    service, spreadsheetId = get_service_and_spreadsheetId()
+    sheetTitle, colNum = get_sheet_title_and_column(service, spreadsheetId)
     projectCells = 'B16:H19'
     initialProjectCellIndex = 16
     rangeName = "%s!%s" % (sheetTitle, projectCells)
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName, majorDimension='COLUMNS').execute()
-    return result.get('values',[])[0], result.get('values',[])[colNum+1]
+    return colNum, sheetTitle, result.get('values',[])[0], result.get('values',[])[colNum+1]
 
 def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
     cols = ['c','d','e','f','g','h']
@@ -113,9 +116,7 @@ def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
     rowIndex = [i for i, s in enumerate(projectNames) if projectStr.lower() in s][0]
     initialCellValue = result['values'][colNum+1][rowIndex]
 
-    return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex), float(initialCellValue), projectNames[rowIndex]
-
-
+    return '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex), float(initialCellValue), projectNames[rowIndex]
 
 
 
@@ -129,8 +130,7 @@ def py_main():
 
     spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
 
-    sheetTitle, column = get_sheet_title_and_column(service, spreadsheetId)
-    projects, hours = get_projects_and_hours_for_sheet(service, spreadsheetId, sheetTitle, column)
+    projects, hours = get_projects_and_hours(service, spreadsheetId)
     index = 0
     items = []
     for project in projects:
@@ -143,6 +143,20 @@ def py_main():
 
     print(items)
 
+def get_service_and_spreadsheetId():
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                    'version=v4')
+    service = discovery.build('sheets', 'v4', http=http,
+                              discoveryServiceUrl=discoveryUrl)
+
+    spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
+
+    return service, spreadsheetId
+
+
+
 
 def main(wf):
     """Shows basic usage of the Sheets API.
@@ -154,35 +168,45 @@ def main(wf):
     #sys.stderr.write("Log this to the console\n")
 
     if len(wf.args):
-#        sys.stderr.write("there ARE arguments!\n")
-#        sys.stderr.write(wf.args[0]+"\n")
-        query = wf.args[0]
+        sys.stderr.write("there ARE arguments!\n")
+        sys.stderr.write(json.dumps(wf.args))
+        hours_to_add = wf.args[len(wf.args)-1]
+        colNum, sheetTitle, projects, hours = wf.cached_data('projects_hours', get_projects_and_hours, max_age=60)
+
+
+        projectStr = " ".join(wf.args[0:len(wf.args)-2])
+        sheetTitle, cell, initialCellValue = get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum)
+        sys.stderr.write(json.dumps([sheetTitle, cell, initialCellValue]))
+
+
+        rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
+        sys.stderr.write("updating range" + rangeName)
+        values = [[initialCellValue + hours]]
+        body = {
+            'values': values
+        }
+        result = service.spreadsheets().values().update(
+            spreadsheetId=spreadsheetId, range=rangeName, body=body, valueInputOption="USER_ENTERED").execute()
+
+        notify('success!',
+               'you have added %s hours to "%s", totalling %s hours' % (hours, projectStr, hours + initialCellValue))
+
+
+
+
     else:
-#        sys.stderr.write("there are no arguments!\n")
-        query = None
+        sys.stderr.write("there are no arguments!\n")
+        colNum, sheetTitle, projects, hours = get_projects_and_hours()
+        index = 0
+        for project in projects:
+            #sys.stderr.write("project: " + project + "\n")
+            wf.add_item(title=project,
+                        subtitle="hours logged: "+hours[index],
+                        icon=ICON_WEB,
+                        autocomplete=project, )
+            index+=1
 
-
-    credentials = get_credentials()
-    http = credentials.authorize(httplib2.Http())
-    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
-                    'version=v4')
-    service = discovery.build('sheets', 'v4', http=http,
-                              discoveryServiceUrl=discoveryUrl)
-
-    spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
-
-    sheetTitle, column = get_sheet_title_and_column(service, spreadsheetId)
-    projects, hours = get_projects_and_hours_for_sheet(service, spreadsheetId, sheetTitle, column)
-    index = 0
-    for project in projects:
-        #sys.stderr.write("project: " + project + "\n")
-        wf.add_item(title=project,
-                    subtitle="hours logged: "+hours[index],
-                    icon=ICON_WEB,
-                    autocomplete=project, )
-        index+=1
-
-    wf.send_feedback()
+        wf.send_feedback()
 
     # sheetTitle, cell, initialCellValue, projectName = get_spreadsheet_cell(service, spreadsheetId, projectStr)
     # rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
