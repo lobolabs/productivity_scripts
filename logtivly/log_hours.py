@@ -11,6 +11,7 @@ import datetime
 import sys
 
 from workflow import Workflow, ICON_WEB, web
+from workflow.notify import notify
 
 
 
@@ -82,11 +83,11 @@ def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
     rangeName = "%s!%s" % (sheetTitle, projectCells)
     result = service.spreadsheets().values().get(
         spreadsheetId=spreadsheetId, range=rangeName, majorDimension='COLUMNS').execute()
-    values = list(map((lambda x: x.lower()), result.get('values',[])[0]))
-    rowIndex = [i for i, s in enumerate(values) if projectStr.lower() in s][0]
+    projectNames = list(map((lambda x: x.lower()), result.get('values',[])[0]))
+    rowIndex = [i for i, s in enumerate(projectNames) if projectStr.lower() in s][0]
     initialCellValue = result['values'][colNum+1][rowIndex]
 
-    return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex), float(initialCellValue)
+    return sheetTitle, '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex), float(initialCellValue), projectNames[rowIndex]
 
 
 def main(wf):
@@ -116,10 +117,8 @@ def main(wf):
                               discoveryServiceUrl=discoveryUrl)
 
     spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
-    sheetTitle, cell, initialCellValue = get_spreadsheet_cell(service, spreadsheetId, projectStr)
+    sheetTitle, cell, initialCellValue, projectName = get_spreadsheet_cell(service, spreadsheetId, projectStr)
     rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
-    sys.stderr.write("hello worldlfal\n")
-    print("updating range" + rangeName)
     values = [[initialCellValue + hours]]
     body = { 
             'values': values
@@ -127,6 +126,7 @@ def main(wf):
     result = service.spreadsheets().values().update(
             spreadsheetId=spreadsheetId, range=rangeName, body=body, valueInputOption="USER_ENTERED").execute()
 
+    notify('success!','you have added %s hours to "%s", totalling %s hours' % (hours, projectName, hours + initialCellValue))
 
 
 if __name__ == '__main__':
