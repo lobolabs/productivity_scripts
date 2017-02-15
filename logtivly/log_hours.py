@@ -10,8 +10,9 @@ from oauth2client.file import Storage
 import datetime
 import sys
 
-from workflow import Workflow, ICON_WEB, web
-from workflow.notify import notify
+if __debug__:
+    from workflow import Workflow, ICON_WEB, web
+    from workflow.notify import notify
 
 
 
@@ -70,7 +71,7 @@ def get_spreadsheet_cell(service, spreadsheetId, projectStr="misc"):
 
                 colNum +=1
 
-def get_sheet_title_and_column(service, spreadsheetId, query):
+def get_sheet_title_and_column(service, spreadsheetId):
     spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
     dateCells = "C15:H15"
     for sheet in spreadsheet['sheets']:
@@ -116,6 +117,33 @@ def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
 
 
 
+
+
+def py_main():
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                    'version=v4')
+    service = discovery.build('sheets', 'v4', http=http,
+                              discoveryServiceUrl=discoveryUrl)
+
+    spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
+
+    sheetTitle, column = get_sheet_title_and_column(service, spreadsheetId)
+    projects, hours = get_projects_and_hours_for_sheet(service, spreadsheetId, sheetTitle, column)
+    index = 0
+    items = []
+    for project in projects:
+        #sys.stderr.write("project: " + project + "\n")
+        items.add_item(title=project,
+                    subtitle=hours[index],
+                    icon=ICON_WEB,
+                    autocomplete=project, )
+        index+=1
+
+    print(items)
+
+
 def main(wf):
     """Shows basic usage of the Sheets API.
 
@@ -132,8 +160,6 @@ def main(wf):
     else:
 #        sys.stderr.write("there are no arguments!\n")
         query = None
-        query2 = None
-
 
 
     credentials = get_credentials()
@@ -145,7 +171,7 @@ def main(wf):
 
     spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
 
-    sheetTitle, column = get_sheet_title_and_column(service, spreadsheetId, query)
+    sheetTitle, column = get_sheet_title_and_column(service, spreadsheetId)
     projects, hours = get_projects_and_hours_for_sheet(service, spreadsheetId, sheetTitle, column)
     index = 0
     for project in projects:
@@ -171,6 +197,11 @@ def main(wf):
 
 
 if __name__ == '__main__':
-    wf = Workflow()
-    sys.exit(wf.run(main))
+    if __debug__:
+        wf = Workflow()
+        sys.exit(wf.run(main))
+    else:
+        py_main()
+
+
 
