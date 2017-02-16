@@ -102,6 +102,7 @@ def get_projects_and_hours():
     return colNum, sheetTitle, result.get('values',[])[0], result.get('values',[])[colNum+1]
 
 def get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum):
+    service, spreadsheetId = get_service_and_spreadsheetId()
     cols = ['c','d','e','f','g','h']
     columnLetter = cols[colNum]
     # it's not likely that there wil be more than 4 projects at a time
@@ -139,6 +140,7 @@ def py_main():
 
     print(items)
 
+@staticmethod
 def get_service_and_spreadsheetId():
     credentials = get_credentials()
     http = credentials.authorize(httplib2.Http())
@@ -164,7 +166,9 @@ def main(wf):
         projectStr = args[0]
         hours_to_add = float(args[1])
         colNum, sheetTitle, projects, hours = wf.cached_data('projects_hours', get_projects_and_hours, max_age=60)
-        sheetTitle, cell, initialCellValue = get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum)
+
+        projectStr = " ".join(wf.args[0:len(wf.args)-2])
+        sheetTitle, cell, initialCellValue = get_project_cell(projectStr, sheetTitle, colNum)
         sys.stderr.write(json.dumps([sheetTitle, cell, initialCellValue]))
         rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
         sys.stderr.write("updating range" + rangeName)
@@ -172,7 +176,9 @@ def main(wf):
         body = {
             'values': values
         }
-        result = service.spreadsheets().values().update(
+
+        service, spreadsheetId =  get_service_and_spreadsheetId()
+        service.spreadsheets().values().update(
             spreadsheetId=spreadsheetId, range=rangeName, body=body, valueInputOption="USER_ENTERED").execute()
 
         notify('success!',
