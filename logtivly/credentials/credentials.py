@@ -48,6 +48,18 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
+def get_service_and_spreadsheetId():
+    credentials = get_credentials()
+    http = credentials.authorize(httplib2.Http())
+    discoveryUrl = ('https://sheets.googleapis.com/$discovery/rest?'
+                    'version=v4')
+    service = discovery.build('sheets', 'v4', http=http,
+                              discoveryServiceUrl=discoveryUrl)
+
+    spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
+
+    return service, spreadsheetId
+
 def main():
     """Shows basic usage of the Sheets API.
 
