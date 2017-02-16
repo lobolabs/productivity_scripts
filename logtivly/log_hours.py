@@ -1,13 +1,7 @@
 
 from __future__ import print_function
-import httplib2
-import os
 import json
 
-from apiclient import discovery
-from oauth2client import client
-from oauth2client import tools
-from oauth2client.file import Storage
 import datetime
 import sys
 from credentials import credentials
@@ -78,13 +72,6 @@ def py_main():
     print(items)
 
 def main(wf):
-    """Shows basic usage of the Sheets API.
-
-    Creates a Sheets API service object and prints the names and majors of
-    students in a sample spreadsheet:
-    https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
-    """
-
     if len(wf.args):
         sys.stderr.write("there ARE arguments!\n")
         sys.stderr.write(json.dumps(wf.args))
@@ -122,16 +109,6 @@ def main(wf):
             index+=1
         wf.send_feedback()
 
-    # sheetTitle, cell, initialCellValue, projectName = get_spreadsheet_cell(service, spreadsheetId, projectStr)
-    # rangeName = '%s!%s:%s' % (sheetTitle, cell, cell)
-    # values = [[initialCellValue + hours]]
-    # body = {
-    #         'values': values
-    #        }
-    # result = service.spreadsheets().values().update(
-    #         spreadsheetId=spreadsheetId, range=rangeName, body=body, valueInputOption="USER_ENTERED").execute()
-    #
-    # notify('success!','you have added %s hours to "%s", totalling %s hours' % (hours, projectName, hours + initialCellValue))
 
 
 if __name__ == '__main__':
