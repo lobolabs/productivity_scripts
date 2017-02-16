@@ -1,2 +1,2 @@
 pip install -r requirements.txt
-python credentials.py
+python credentials/credentials.py
