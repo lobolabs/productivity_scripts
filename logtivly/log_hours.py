@@ -10,7 +10,6 @@ from oauth2client import tools
 from oauth2client.file import Storage
 import datetime
 import sys
-from optparse import OptionParser
 
 if __debug__:
     from workflow import Workflow, ICON_WEB, web
@@ -209,8 +208,6 @@ def main(wf):
 
 
 if __name__ == '__main__':
-    parser = OptionParser()
-    (options, args) = parser.parse_args()
     if __debug__:
         wf = Workflow()
         sys.exit(wf.run(main))
