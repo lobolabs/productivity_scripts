@@ -17,25 +17,6 @@ if __debug__:
     from workflow.notify import notify
 
 
-def get_spreadsheet_cell(service, spreadsheetId, projectStr="misc"):
-    spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
-    dateCells = "C15:H15"
-    for sheet in spreadsheet['sheets']:
-        sheetTitle = sheet['properties']['title']
-        rangeName = "%s!%s" % (sheetTitle, dateCells)
-        result = service.spreadsheets().values().get(
-            spreadsheetId=spreadsheetId, range=rangeName).execute()
-        values = result.get('values',[])
-        colNum = 0
-        # TODO: replace current year with actual cell year, see http://stackoverflow.com/q/42216491/766570
-        for row in values:
-            for column in row:
-                dateStr = "%s %s" % (column, datetime.date.today().year)
-                cellDate = datetime.datetime.strptime(dateStr, '%b %d %Y')
-                if cellDate.date() == datetime.date.today():
-                    return get_project_cell(service, spreadsheetId, projectStr, sheetTitle, colNum)
-                colNum +=1
-
 def get_sheet_title_and_column(service, spreadsheetId):
     spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
     dateCells = "C15:H15"
