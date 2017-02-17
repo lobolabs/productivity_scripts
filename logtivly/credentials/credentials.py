@@ -1,6 +1,7 @@
 from __future__ import print_function
 import httplib2
 import os
+import sys
 
 from apiclient import discovery
 from oauth2client import client
@@ -50,7 +51,8 @@ def get_service_and_spreadsheetId():
     service = discovery.build('sheets', 'v4', http=http,
                               discoveryServiceUrl=discoveryUrl)
 
-    spreadsheetId = '1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI'
+    spreadsheetId = os.getenv('spreadsheetId')
+    sys.stderr.write("\nspreadsheetId %s\n" % (spreadsheetId))
 
     return service, spreadsheetId
 
