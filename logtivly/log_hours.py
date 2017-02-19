@@ -66,20 +66,6 @@ def get_project_cell(projectStr, sheetTitle, colNum):
     initialCellValue = values[colNum+1][rowIndex[0]] if len(values) > 1 and rowIndex else 0
     return '%s%s' % (columnLetter, initialProjectCellIndex + rowIndex[0]), float(initialCellValue), projectNames[rowIndex[0]] if projectNames else ''
 
-def py_main():
-    colNum, sheetTitle, projects, hours = get_projects_and_hours()
-    index = 0
-    items = []
-    for project in projects:
-        #sys.stderr.write("project: " + project + "\n")
-        items.append({'title':project,
-                    'subtitle':"hours logged: "+hours[index],
-                    'icon':'ICON_WEB',
-                    'autocomplete':project})
-        index+=1
-
-    print(items)
-
 def main(wf):
 
     if not os.path.isfile('~/.credentials/'+credentials.CREDS_FILENAME):
@@ -125,8 +111,5 @@ def main(wf):
 
 
 if __name__ == '__main__':
-    if __debug__:
-        wf = Workflow(libraries=['./'])
-        sys.exit(wf.run(main))
-    else:
-        py_main()
+    wf = Workflow(libraries=['./'])
+    sys.exit(wf.run(main))
