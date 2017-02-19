@@ -14,7 +14,7 @@ if __debug__:
 
 def get_sheet_title_and_column(service, spreadsheetId):
     spreadsheet = service.spreadsheets().get(spreadsheetId=spreadsheetId).execute()
-    dateCells = "C15:H15"
+    dateCells = "C15:I15"
     for sheet in spreadsheet['sheets']:
         sheetTitle = sheet['properties']['title']
         rangeName = "%s!%s" % (sheetTitle, dateCells)
@@ -26,17 +26,22 @@ def get_sheet_title_and_column(service, spreadsheetId):
         for row in values:
             for column in row:
                 dateStr = "%s %s" % (column, datetime.date.today().year)
-                cellDate = datetime.datetime.strptime(dateStr, '%b %d %Y')
-                if cellDate.date() == datetime.date.today():
-                    return sheetTitle, colNum
+                try:
+                    cellDate = datetime.datetime.strptime(dateStr, '%b %d %Y')
+                    if cellDate.date() == datetime.date.today():
+                        return sheetTitle, colNum
+                except ValueError:
+                    continue
 
                 colNum +=1
-        return sheetTitle, 0
+
+    #TODO: return an error when no sheet is found corresponding to the date
+
 
 def get_projects_and_hours():
     service, spreadsheetId = credentials.get_service_and_spreadsheetId()
     sheetTitle, colNum = get_sheet_title_and_column(service, spreadsheetId)
-    projectCells = 'B16:H19'
+    projectCells = 'B16:I19'
     initialProjectCellIndex = 16
     rangeName = "%s!%s" % (sheetTitle, projectCells)
     result = service.spreadsheets().values().get(
@@ -51,7 +56,7 @@ def get_projects_and_hours():
 
 def get_project_cell(projectStr, sheetTitle, colNum):
     service, spreadsheetId = credentials.get_service_and_spreadsheetId()
-    cols = ['c','d','e','f','g','h']
+    cols = ['c','d','e','f','g','h','i']
     columnLetter = cols[colNum]
     # it's not likely that there wil be more than 4 projects at a time
     # but if there is, do logic that fetches all rows before the "total hours" row starts
