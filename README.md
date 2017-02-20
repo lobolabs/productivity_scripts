@@ -8,12 +8,14 @@ lvy
 - should be installed
 
 # usage
-- this will only work on the spreadsheet here for now: https://docs.google.com/spreadsheets/d/1tRziPgOwgPBCYIQZuwa7Me1vk5_tfsAWb3mcpPICxEI/edit#gid=645587249
-- launch your alfred
-- type `log %project% %hours%`
-- ie log misc 10
-- it will think for a while then it will udpate the sheet with the hours you inputted on the project on the same day
+- add the spreadsheet ID you want to change in the Workflow Enviornment Variable
+![monosnap 2017-02-20 07-04-54](https://cloud.githubusercontent.com/assets/774379/23112695/ff458b7e-f73a-11e6-8030-901a369c2cdc.png)
 
-# assumptions
-- a column already exists for the same day you're posting this
-- when you're typing a project, the project exists.. although the search is case insensitive and covers all elements of the word
+- launch your alfred
+- hot key: alt + command + l
+- it will show a list of your projects
+- select project name, hit tab to autocomplete
+- add a number of hours
+- wait a sec for processing
+- you should get a notification message saying success!
+
